@@ -1,0 +1,25 @@
+name: Debug VERCEL_TOKEN
+
+on:
+  push:
+    branches: [master, main]
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check secret round-trip
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "Token length: ${#VERCEL_TOKEN}"
+          echo "Token contains '=': $(echo "$VERCEL_TOKEN" | grep -c '=')"
+          echo "Token first 8: ${VERCEL_TOKEN:0:8}"
+          echo "Token last 4: ${VERCEL_TOKEN: -4}"
+          # 用 Vercel API 直接验证 token
+          curl -s -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v9/user | head -c 200
+          echo ""
+          # 再跑一遍 vercel whoami 看 CLI 到底怎么解析
+          npx vercel@latest whoami --token "$VERCEL_TOKEN"
