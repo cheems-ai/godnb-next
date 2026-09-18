@@ -1,0 +1,141 @@
+/**
+ * 全局样式 —— Tailwind v4 + shadcn/ui CSS 变量 + 主题切换 + 预加载关键资源
+ *
+ * Tailwind v4 不再需要 tailwind.config.js：
+ *   - 颜色 / 字体 / 主题 tokens 直接用 @theme 写在 globals.css 里
+ *   - 组件里 tailwind.config 的 @apply / theme() 语法继续可用
+ * shadcn/ui 需要的 CSS 变量（--background / --foreground / --card ...）必须在 :root 里定义。
+ */
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------
+ * shadcn/ui 需要的 CSS 变量（new-york 风格，neutral 色盘）
+ * 浅色主题
+ * --------------------------------------------------------------- */
+@layer base {
+  :root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.141 0.005 285.823);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.141 0.005 285.823);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.141 0.005 285.823);
+    --primary: oklch(0.541 0.207 277.129);
+    --primary-foreground: oklch(0.985 0.002 247.839);
+    --secondary: oklch(0.967 0.001 286.375);
+    --secondary-foreground: oklch(0.21 0.006 285.885);
+    --muted: oklch(0.967 0.001 286.375);
+    --muted-foreground: oklch(0.552 0.016 285.938);
+    --accent: oklch(0.967 0.001 286.375);
+    --accent-foreground: oklch(0.21 0.006 285.885);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.577 0.245 27.325);
+    --border: oklch(0.92 0.004 286.32);
+    --input: oklch(0.92 0.004 286.32);
+    --ring: oklch(0.541 0.207 277.129);
+    --radius: 0.5rem;
+  }
+  /* 深色主题（prefers-color-scheme） */
+  .dark {
+    --background: oklch(0.141 0.005 285.823);
+    --foreground: oklch(0.985 0.002 247.839);
+    --card: oklch(0.141 0.005 285.823);
+    --card-foreground: oklch(0.985 0.002 247.839);
+    --popover: oklch(0.141 0.005 285.823);
+    --popover-foreground: oklch(0.985 0.002 247.839);
+    --primary: oklch(0.696 0.17 282.777);
+    --primary-foreground: oklch(0.21 0.006 285.885);
+    --secondary: oklch(0.274 0.006 286.033);
+    --secondary-foreground: oklch(0.985 0.002 247.839);
+    --muted: oklch(0.274 0.006 286.033);
+    --muted-foreground: oklch(0.705 0.015 286.067);
+    --accent: oklch(0.274 0.006 286.033);
+    --accent-foreground: oklch(0.985 0.002 247.839);
+    --destructive: oklch(0.704 0.191 22.216);
+    --destructive-foreground: oklch(0.704 0.191 22.216);
+    --border: oklch(0.274 0.006 286.033);
+    --input: oklch(0.274 0.006 286.033);
+    --ring: oklch(0.696 0.17 282.777);
+  }
+}
+
+/* Tailwind 主题桥：把 CSS 变量映射到 Tailwind 颜色 token */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* 全局重置 + 基础排版 */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    /* 字体平滑 + 100vh 在移动端的小 bug 修 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    min-height: 100dvh; /* 替代 100vh，解决 iOS 地址栏伸缩 */
+    background: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  /* 图片/响应式媒体默认懒加载（next/image 自动处理；原生 img/video 兜底） */
+  img, video {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* 性能友好的滚动条：macOS/iOS 自动隐藏，Windows 更细 */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* 骨架屏通用动画（shadcn Skeleton 组件会用这个 keyframes） */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    color-mix(in oklab, var(--muted) 60%, transparent) 50%,
+    var(--muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s linear infinite;
+}
