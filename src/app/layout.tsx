@@ -31,40 +31,51 @@ const inter = Inter({
 });
 
 /* ---------- 全局元数据（SEO + 社交分享） ----------
- * 继承到所有子页面；子页面用 generateMetadata 覆盖。 */
+ * 继承到所有子页面；子页面用 generateMetadata 覆盖。
+ *
+ * ⚠️ 关键约束：metadata 对象是 SSG 时编译期求值，process.env 拿不到
+ *    Vercel 运行时注入的 env var（构建时 env var 还没拉下来）。
+ *    所以所有 title/description/siteName 都用 **静态字符串字面量**。
+ *    metadataBase 用运行时安全的 fallback 也没用，直接写死稳定 URL。 */
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://godnb.com"),
+  metadataBase: new URL("https://godnb-next.vercel.app"),
   title: {
-    default: process.env.NEXT_PUBLIC_SITE_NAME || "God Next",
-    template: "%s · " + (process.env.NEXT_PUBLIC_SITE_NAME || "God Next"),
+    default: "God Next · 商业底座",
+    template: "%s · God Next",
   },
   description:
-    "基于 Next.js 15 + Tailwind + shadcn/ui 的一体化商业架构 —— 电商 / 博客 / SaaS，性能优先。",
-  keywords: ["Next.js", "Tailwind", "shadcn", "电商", "博客", "SaaS", "TypeScript"],
+    "Next.js 16 + Tailwind v4 + shadcn/ui 一体化商业底座 —— 电商 ISR / 博客 SSG / SaaS SSR，性能优先。",
+  keywords: [
+    "Next.js", "Tailwind", "shadcn", "TypeScript",
+    "电商", "博客", "SaaS", "ISR", "SSG", "SSR",
+  ],
   authors: [{ name: "God NB", url: "https://godnb.com" }],
   openGraph: {
     type: "website",
     locale: "zh_CN",
-    url: process.env.NEXT_PUBLIC_SITE_URL,
-    siteName: process.env.NEXT_PUBLIC_SITE_NAME,
+    url: "https://godnb-next.vercel.app",
+    siteName: "God Next",
+    title: "God Next · 电商/博客/SaaS 一体化底座",
+    description:
+      "Next.js 16 + Tailwind v4 + shadcn/ui 商业底座 —— 三种渲染策略，一套架构。",
     images: [
       {
         url: "/og-cover.png",
         width: 1200,
         height: 630,
-        alt: "God Next · Next.js 15 商业底座",
+        alt: "God Next · Next.js 16 商业底座",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: process.env.NEXT_PUBLIC_SITE_NAME,
+    title: "God Next · 电商/博客/SaaS 一体化底座",
     description:
-      "基于 Next.js 15 + Tailwind + shadcn/ui 的一体化商业架构 —— 电商 / 博客 / SaaS。",
+      "Next.js 16 + Tailwind v4 + shadcn/ui 商业底座。",
     images: ["/og-cover.png"],
   },
   robots: { index: true, follow: true },
-  alternates: { canonical: "/" },
+  alternates: { canonical: "https://godnb-next.vercel.app" },
 };
 
 /* ---------- 视口配置（必须单独导出） ---------- */
