@@ -1,11 +1,14 @@
 name: Deploy to Vercel (CI/CD)
 # ---------------------------------------------------------------------------
-# 自动部署流水线 — 不依赖 Vercel GitHub App，纯 CLI 驱动。
-# 触发：每次 push 到 master / main 分支
-# 凭据：VERCEL_TOKEN (用户在 GitHub repo Settings → Secrets and variables → Actions 添加)
+# 自动部署流水线 — 不依赖 Vercel GitHub App，纯 CLI + Secrets 驱动。
+# 触发：push 到 master/main → Production；PR → Preview
+# 凭据：repo Secret VERCEL_TOKEN
 #
-# 手动设置 VERCEL_TOKEN 一次之后，后续所有 push 自动构建部署。
-# Vercel 仍会创建 preview deployment（PR）和 production deployment（master）。
+# 命令行注意事项（历史踩坑）：
+#   ❌ --token="$VERCEL_TOKEN"   ← bash 展开后 --token=xxx 会被 CLI 误报 "= in token"
+#   ❌ --token=$VERCEL_TOKEN     ← 同上，不加引号也会有 =
+#   ✅ --token "$VERCEL_TOKEN"    ← 空格分隔，CLI 正确解析
+#   ✅ VERCEL_TOKEN=xxx npx ...   ← 用环境变量（--token 只是多传一次，冗余但安全）
 # ---------------------------------------------------------------------------
 
 on:
@@ -28,45 +31,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 24 + pnpm
+      - name: Setup pnpm 10
         uses: pnpm/action-setup@v4
         with:
           version: 10.33.0
-        continue-on-error: true
-      # 兜底：如果 pnpm/action-setup 失败（沙箱网络限制），用 corepack
-      - name: Setup Node + pnpm (corepack fallback)
-        if: failure()
+
+      - name: Setup Node.js 24
         uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: pnpm
-      - name: Use corepack to enable pnpm
-        if: failure()
-        run: corepack enable && corepack prepare pnpm@10.33.0 --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Pull Vercel project settings (环境变量等)
+      # 用 --token 空格分隔（避免 bash 展开成 --token=value 触发 CLI bug）
+      - name: Pull Vercel project settings
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: npx vercel@latest pull --yes --token="$VERCEL_TOKEN"
+        run: npx vercel@latest pull --yes --token "$VERCEL_TOKEN"
 
-      - name: Build & Deploy (PR → Preview / master → Production)
+      - name: Build & Deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           BRANCH=${{ github.ref_name }}
           if [ "$BRANCH" = "master" ] || [ "$BRANCH" = "main" ]; then
             echo "📦 Production deploy from $BRANCH"
-            npx vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
+            npx vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
           else
             echo "🧪 Preview deploy from $BRANCH"
-            npx vercel@latest deploy --yes --token="$VERCEL_TOKEN"
+            npx vercel@latest deploy --yes --token "$VERCEL_TOKEN"
           fi
 
-      - name: Capture deployment URL
+      - name: Capture deployment URL (always)
         if: always()
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          DEPLOY_URL=$(npx vercel@latest deploy ls --token="$VERCEL_TOKEN" 2>/dev/null | head -n 1)
-          echo "🔗 Latest deploy: $DEPLOY_URL"
+          echo "🔗 Project: https://vercel.com/cheems-ai/godnb-next"
